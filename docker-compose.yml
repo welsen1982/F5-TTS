@@ -14,7 +14,7 @@ services:
       - F5TTS_DEVICE=cuda
       - LOG_LEVEL=INFO
       # 指定默认参考音频路径（容器内路径）
-      - DEFAULT_REF_AUDIO=/data/ref_audio/aliyuntts-4sec.wav
+      # - DEFAULT_REF_AUDIO=/data/ref_audio/aliyuntts-4sec.wav
       # 缓存目录配置
       - HF_HOME=/root/.cache/huggingface
       - HF_HUB_OFFLINE=1 # 强制离线模式，禁止联网下载

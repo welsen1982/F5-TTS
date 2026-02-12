@@ -9,10 +9,10 @@ API_URL = "http://127.0.0.1:8008/tts"
 
 # 测试文本：包含中文、英文和数字，长度适中
 GEN_TEXT = (
-    "F5-TTS 模型测试。这里是一段包含多语言的文本。"
-    "The F5-TTS system allows for high-quality speech generation. "
-    "当前测试编号为 2025-02-12，系统运行在 NVIDIA V100 GPU 上。"
-    "Let's see how it performs with mixed content."
+    "F5-TTS 模型测试。这是一个以中文为主的测试文本。"
+    "随着人工智能技术的飞速发展，语音合成的效果已经越来越自然。"
+    "不仅语调流畅，情感表达也更加丰富。"
+    "让我们听听这段生成的语音效果如何吧。"
 )
 
 OUTPUT_FILE = "test_output_no_ref.wav"

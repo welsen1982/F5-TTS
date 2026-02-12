@@ -3,10 +3,6 @@ FROM pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel
 
 USER root
 
-# 配置构建时的临时代理 (确保 apt/pip/git 能走代理)
-ENV http_proxy=http://192.168.8.120:20173
-ENV https_proxy=http://192.168.8.120:20173
-
 ARG DEBIAN_FRONTEND=noninteractive
 
 LABEL github_repo="https://github.com/welsen1982/F5-TTS.git"
@@ -41,7 +37,6 @@ ENV SHELL=/bin/bash
 
 VOLUME /root/.cache/huggingface/hub/
 
-EXPOSE 7860
 EXPOSE 8008
 
 WORKDIR /workspace/F5-TTS
