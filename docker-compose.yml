@@ -16,6 +16,8 @@ services:
       # 安全配置
       - F5_TTS_API_KEY=b3766c7969fb8ac818c579978899bb6a6fbedae99724283c8787d2fb204a4466
       - ALLOWED_ORIGINS=*                   # 生产环境建议指定具体域名
+      # 文本归一化
+      - ENABLE_TEXT_NORMALIZATION=true
       # 指定默认参考音频路径（容器内路径）
       # - DEFAULT_REF_AUDIO=/data/ref_audio/aliyuntts-4sec.wav
       # 缓存目录配置
@@ -32,6 +34,8 @@ services:
       # 必须显式挂载该子目录，否则会被空卷覆盖
       - /home/zju/.cache/huggingface:/root/.cache/huggingface
       - /home/zju/.cache/huggingface/hub:/root/.cache/huggingface/hub
+      # 挂载文本归一化缓存，加速启动
+      - /home/zju/.cache/f5_tts/tn_cache:/root/.cache/f5_tts/tn_cache
       # 挂载参考音频目录
       - ./data/ref_audio:/data/ref_audio
     # 移除 deploy 部分，改用 runtime: nvidia

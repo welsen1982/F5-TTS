@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from importlib.resources import files
 
 from f5_tts.api import F5TTS
+from f5_tts.model.text_normalizer import normalize_text, _global_normalizer
 
 
 class InferenceParams(BaseModel):
@@ -102,6 +103,9 @@ class AppState:
         # 安全配置
         self.api_key = os.environ.get("F5_TTS_API_KEY", None)
         self.allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
+        
+        # 文本归一化开关
+        self.enable_text_normalization = os.environ.get("ENABLE_TEXT_NORMALIZATION", "true").lower() == "true"
 
 
 state = AppState()
@@ -168,6 +172,11 @@ def _wav_to_base64(wav: np.ndarray, sample_rate: int) -> str:
 async def startup_event():
     logger.info("Starting up F5-TTS service...")
     try:
+        # 初始化文本归一化工具
+        if state.enable_text_normalization:
+            # 在后台初始化，避免阻塞启动太久
+            asyncio.create_task(asyncio.to_thread(_global_normalizer.initialize))
+
         # 在启动时预加载模型，避免首次请求延迟
         _ensure_model_loaded()
         logger.info(f"Model {state.model_name} loaded on {state.f5tts.device}")
@@ -295,6 +304,13 @@ async def tts(
             if tts_request is None:
                 raise ValueError("Missing gen_text or valid request JSON")
 
+            # 文本归一化
+            final_gen_text = tts_request.gen_text
+            if state.enable_text_normalization:
+                final_gen_text = normalize_text(final_gen_text)
+                if final_gen_text != tts_request.gen_text:
+                    logger.info(f"Normalized text: {tts_request.gen_text} -> {final_gen_text}")
+
             _ensure_model_loaded()
             if ref_audio is not None:
                 ref_path = await _save_upload_to_temp(ref_audio)
@@ -324,7 +340,7 @@ async def tts(
                 lambda: state.f5tts.infer(
                     ref_file=str(ref_path),
                     ref_text=tts_request.ref_text or state.default_ref_text,
-                    gen_text=tts_request.gen_text,
+                    gen_text=final_gen_text,
                     target_rms=params.target_rms,
                     cross_fade_duration=params.cross_fade_duration,
                     sway_sampling_coef=params.sway_sampling_coef,
@@ -383,13 +399,18 @@ async def tts_batch(items: List[TTSBatchItem]):
                 else:
                     ref_path = Path(state.default_ref_audio)
                     if not ref_path.exists():
-                         ref_path = Path(files("f5_tts").joinpath("infer/examples/basic/basic_ref_en.wav"))
+                     ref_path = Path(files("f5_tts").joinpath("infer/examples/basic/basic_ref_en.wav"))
+
+                # 文本归一化
+                final_gen_text = item.gen_text
+                if state.enable_text_normalization:
+                    final_gen_text = normalize_text(final_gen_text)
 
                 p = item.params
                 wav, sr, _ = state.f5tts.infer(
                     ref_file=str(ref_path),
                     ref_text=item.ref_text or state.default_ref_text,
-                    gen_text=item.gen_text,
+                    gen_text=final_gen_text,
                     target_rms=p.target_rms,
                     cross_fade_duration=p.cross_fade_duration,
                     sway_sampling_coef=p.sway_sampling_coef,

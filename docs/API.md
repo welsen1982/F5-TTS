@@ -212,6 +212,7 @@ result = response.json()
 可通过环境变量调整服务行为：
 - `F5_TTS_API_KEY`: API 认证密钥
 - `ALLOWED_ORIGINS`: 允许的 CORS 来源（默认 `*`）
+- `ENABLE_TEXT_NORMALIZATION`: 是否启用文本标准化 (默认 `true`)
 - `MAX_CONCURRENCY`: 最大并发请求数（默认 1）
 - `F5TTS_MODEL`: 模型名称（默认 `F5TTS_v1_Base`）
 - `F5TTS_DEVICE`: 指定设备 (`cuda`, `cpu`, `mps`)

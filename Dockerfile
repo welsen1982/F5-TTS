@@ -30,12 +30,15 @@ COPY . /workspace/F5-TTS
 # 安装依赖
 RUN cd F5-TTS \
     && pip install -e . --no-cache-dir
-    
-RUN pip install --no-cache-dir fastapi uvicorn httpx
 
+# 单独安装 WeTextProcessing 并预热缓存（避免启动时编译耗时）
+# 注意：WeTextProcessing 依赖 pynini，可能需要较长安装时间
+RUN python -c "from f5_tts.model.text_normalizer import _global_normalizer; _global_normalizer.initialize()" || true
+    
 ENV SHELL=/bin/bash
 
 VOLUME /root/.cache/huggingface/hub/
+VOLUME /root/.cache/f5_tts/tn_cache/
 
 EXPOSE 8008
 
