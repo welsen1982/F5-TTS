@@ -13,6 +13,9 @@ services:
       - F5TTS_MODEL=F5TTS_v1_Base
       - F5TTS_DEVICE=cuda
       - LOG_LEVEL=INFO
+      # 安全配置
+      - F5_TTS_API_KEY=b3766c7969fb8ac818c579978899bb6a6fbedae99724283c8787d2fb204a4466
+      - ALLOWED_ORIGINS=*                   # 生产环境建议指定具体域名
       # 指定默认参考音频路径（容器内路径）
       # - DEFAULT_REF_AUDIO=/data/ref_audio/aliyuntts-4sec.wav
       # 缓存目录配置

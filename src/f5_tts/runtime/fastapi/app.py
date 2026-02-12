@@ -10,8 +10,10 @@ from typing import Optional, List
 import numpy as np
 import soundfile as sf
 import tomli
-from fastapi import FastAPI, UploadFile, File, Body, Form, Request
+from fastapi import FastAPI, UploadFile, File, Body, Form, Request, Security, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from importlib.resources import files
 
@@ -96,10 +98,41 @@ class AppState:
             "DEFAULT_REF_TEXT",
             "沈先生，你好，我是客服助手小黄，很高兴为您服务"
         )
+        
+        # 安全配置
+        self.api_key = os.environ.get("F5_TTS_API_KEY", None)
+        self.allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
 
 
 state = AppState()
 app = FastAPI(title="F5-TTS FastAPI Service", version="1.0")
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=state.allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API Key Security
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    if state.api_key:  # Only enforce if API key is set
+        if not api_key_header:
+             raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing API Key",
+            )
+        if api_key_header != state.api_key:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid API Key",
+            )
+    return api_key_header
 
 
 def _project_root() -> Path:
@@ -173,7 +206,7 @@ def health():
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 
-@app.post("/warmup")
+@app.post("/warmup", dependencies=[Depends(get_api_key)])
 def warmup():
     try:
         _ensure_model_loaded()
@@ -211,7 +244,7 @@ def version():
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 
-@app.post("/tts", response_model=TTSResponse)
+@app.post("/tts", response_model=TTSResponse, dependencies=[Depends(get_api_key)])
 async def tts(
     request: Request,
     request_str: Optional[str] = Form(None, alias="request", description="JSON string of TTSRequest"),
@@ -331,7 +364,7 @@ async def tts(
                 pass
 
 
-@app.post("/tts/batch")
+@app.post("/tts/batch", dependencies=[Depends(get_api_key)])
 async def tts_batch(items: List[TTSBatchItem]):
     req_id = uuid.uuid4().hex[:8]
     async with state.sema:

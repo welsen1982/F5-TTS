@@ -3,14 +3,36 @@
 本文档详细说明了 F5-TTS FastAPI 服务提供的 HTTP 接口。
 
 ## 基础信息
-- **默认端口**：`8000`（Docker 部署时建议映射）
+- **默认端口**：`8008`（Docker 部署时建议映射）
 - **基础路径**：`/`
-- **认证**：暂无（建议在网关层配置）
+- **认证**：API Key 认证 (Header `X-API-Key`)
+
+## 安全认证 (Security)
+
+为了保护服务接口，生产环境必须启用 API Key 认证。
+
+### 启用方式
+在服务端设置环境变量 `F5_TTS_API_KEY`，例如：
+```bash
+export F5_TTS_API_KEY="your-secret-key-xxx"
+```
+
+### 客户端调用
+在所有 POST 请求（`/tts`, `/tts/batch`, `/warmup`）中添加 HTTP Header：
+```http
+X-API-Key: your-secret-key-xxx
+```
+
+若 Key 无效或缺失，将返回：
+- **401 Unauthorized**: 未提供 Key
+- **403 Forbidden**: Key 错误
+
+---
 
 ## 1. 系统接口
 
 ### 1.1 健康检查
-用于 Kubernetes 存活探针（Liveness Probe）或服务监控。
+用于 Kubernetes 存活探针（Liveness Probe）或服务监控。不需要认证。
 
 - **URL**: `/health`
 - **Method**: `GET`
@@ -39,7 +61,7 @@
   ```
 
 ### 1.3 模型预热
-显式触发一次短音频生成，用于 Kubernetes 就绪探针（Readiness Probe）或冷启动优化。
+显式触发一次短音频生成，用于 Kubernetes 就绪探针（Readiness Probe）或冷启动优化。需要 API Key。
 
 - **URL**: `/warmup`
 - **Method**: `POST`
@@ -57,7 +79,7 @@
 ## 2. 语音合成接口 (TTS)
 
 ### 2.1 单次合成
-核心接口，支持通过上传文件或 URL 提供参考音频。
+核心接口，支持通过上传文件或 URL 提供参考音频。需要 API Key。
 
 - **URL**: `/tts`
 - **Method**: `POST`
@@ -136,7 +158,7 @@ result = response.json()
 ---
 
 ### 2.2 批量合成
-用于一次性处理多个请求，受服务端并发队列控制。
+用于一次性处理多个请求，受服务端并发队列控制。需要 API Key。
 
 - **URL**: `/tts/batch`
 - **Method**: `POST`
@@ -181,11 +203,15 @@ result = response.json()
 
 ## 错误码
 - **200**: 成功
+- **401**: 认证失败（未提供 API Key）
+- **403**: 权限不足（API Key 错误）
 - **422**: 参数校验错误（如缺少 `gen_text`）
 - **500**: 服务端内部错误（如显存不足、模型加载失败）
 
 ## 部署配置
 可通过环境变量调整服务行为：
+- `F5_TTS_API_KEY`: API 认证密钥
+- `ALLOWED_ORIGINS`: 允许的 CORS 来源（默认 `*`）
 - `MAX_CONCURRENCY`: 最大并发请求数（默认 1）
 - `F5TTS_MODEL`: 模型名称（默认 `F5TTS_v1_Base`）
 - `F5TTS_DEVICE`: 指定设备 (`cuda`, `cpu`, `mps`)
