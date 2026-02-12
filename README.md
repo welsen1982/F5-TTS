@@ -202,6 +202,55 @@ f5-tts_infer-cli -c custom.toml
 f5-tts_infer-cli -c src/f5_tts/infer/examples/multi/story.toml
 ```
 
+### 3. FastAPI 部署（生产环境）
+
+- 启动服务（本地或容器内）：
+
+```bash
+uvicorn f5_tts.runtime.fastapi.app:app --host 0.0.0.0 --port 8000
+```
+
+- 通过 Docker 启动（镜像已安装 fastapi/uvicorn）：
+
+```bash
+docker run --rm -it --gpus=all \
+  -e MAX_CONCURRENCY=1 \
+  -e F5TTS_MODEL=F5TTS_v1_Base \
+  -v f5-tts:/root/.cache/huggingface/hub/ \
+  -p 8000:8000 ghcr.io/swivid/f5-tts:main \
+  uvicorn f5_tts.runtime.fastapi.app:app --host 0.0.0.0 --port 8000
+```
+
+- 发送请求示例（使用参考音频 URL）：
+
+```bash
+curl -X POST http://localhost:8000/tts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gen_text": "你好，这是一个 FastAPI 部署示例。",
+    "ref_text": "",
+    "ref_audio_url": "https://example.com/prompt.wav",
+    "params": {"nfe_step": 32, "cfg_strength": 2.0}
+  }' | jq .
+```
+
+- 上传参考音频（multipart）：
+
+```bash
+curl -X POST "http://localhost:8000/tts" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "ref_audio=@/path/to/prompt.wav" \
+  -F 'request={"gen_text":"示例文本","ref_text":""};type=application/json'
+```
+
+- 接口一览：
+  - POST /tts：单次生成，返回 WAV base64
+  - POST /tts/batch：批量生成（受并发控制）
+  - GET /health：健康检查
+  - POST /warmup：预热模型
+  - GET /version：版本信息
+
 
 ## Training
 

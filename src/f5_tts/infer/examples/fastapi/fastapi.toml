@@ -1,0 +1,13 @@
+[server]
+host = "0.0.0.0"
+port = 8008
+max_concurrency = 3
+log_level = "INFO"
+
+[inference]
+# 默认推理参数
+nfe_step = 32
+cfg_strength = 2.0
+sway_sampling_coef = -1.0
+speed = 1.0
+fix_duration = -1.0  # -1 表示自动计算

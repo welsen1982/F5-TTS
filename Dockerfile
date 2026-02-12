@@ -20,11 +20,13 @@ RUN git clone https://github.com/SWivid/F5-TTS.git \
     && cd F5-TTS \
     && git submodule update --init --recursive \
     && pip install -e . --no-cache-dir
+RUN pip install --no-cache-dir fastapi uvicorn httpx
 
 ENV SHELL=/bin/bash
 
 VOLUME /root/.cache/huggingface/hub/
 
 EXPOSE 7860
+EXPOSE 8000
 
 WORKDIR /workspace/F5-TTS
