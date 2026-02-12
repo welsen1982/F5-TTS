@@ -86,10 +86,10 @@ class AppState:
         self.device = os.environ.get("F5TTS_DEVICE", None)
         self.vocoder_local_path = os.environ.get("VOCODER_LOCAL_PATH", None)
         self.hf_cache_dir = os.environ.get("HF_CACHE_DIR", None)
-        # 固定参考音频路径，支持环境变量覆盖
+        # 固定参考音频路径，支持环境变量覆盖。默认使用内置示例。
         self.default_ref_audio = os.environ.get(
             "DEFAULT_REF_AUDIO", 
-            "/home/zju/projects/F5-TTS/data/ref_audio/aliyuntts-4sec.wav"
+            str(files("f5_tts").joinpath("infer/examples/basic/aliyuntts-4sec.wav"))
         )
         # 固定参考文本，支持环境变量覆盖
         self.default_ref_text = os.environ.get(

@@ -1,10 +1,19 @@
+# 恢复使用官方 PyTorch 镜像 (已配置 Docker Daemon 代理)
 FROM pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel
 
 USER root
 
+# 配置构建时的临时代理 (确保 apt/pip/git 能走代理)
+ENV http_proxy=http://192.168.8.120:20173
+ENV https_proxy=http://192.168.8.120:20173
+
 ARG DEBIAN_FRONTEND=noninteractive
 
-LABEL github_repo="https://github.com/SWivid/F5-TTS"
+LABEL github_repo="https://github.com/welsen1982/F5-TTS.git"
+
+# 切换 APT 国内源 (阿里云)
+RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list \
+    && sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
 
 RUN set -x \
     && apt-get update \
@@ -16,10 +25,16 @@ RUN set -x \
     
 WORKDIR /workspace
 
-RUN git clone https://github.com/SWivid/F5-TTS.git \
-    && cd F5-TTS \
-    && git submodule update --init --recursive \
+# 配置 pip 国内源
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
+# 直接复制本地代码到容器
+COPY . /workspace/F5-TTS
+
+# 安装依赖
+RUN cd F5-TTS \
     && pip install -e . --no-cache-dir
+    
 RUN pip install --no-cache-dir fastapi uvicorn httpx
 
 ENV SHELL=/bin/bash
@@ -27,6 +42,13 @@ ENV SHELL=/bin/bash
 VOLUME /root/.cache/huggingface/hub/
 
 EXPOSE 7860
-EXPOSE 8000
+EXPOSE 8008
 
 WORKDIR /workspace/F5-TTS
+
+# 设置默认环境变量
+ENV MAX_CONCURRENCY=3
+ENV F5TTS_MODEL=F5TTS_v1_Base
+
+# 默认启动 FastAPI 服务
+CMD ["uvicorn", "f5_tts.runtime.fastapi.app:app", "--host", "0.0.0.0", "--port", "8008"]

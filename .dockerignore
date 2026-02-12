@@ -1,0 +1,32 @@
+# 版本控制
+.git
+.gitignore
+.gitmodules
+
+# 虚拟环境
+venv/
+env/
+.env
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.so
+
+# 数据文件 (建议运行时挂载)
+data/
+ckpts/
+*.wav
+*.mp3
+
+# IDE 配置
+.vscode/
+.idea/
+
+# 其他
+Dockerfile
+docker-compose.yml
+README.md
+docs/
+tests/
+test_*.py

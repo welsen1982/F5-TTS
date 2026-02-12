@@ -1,0 +1,40 @@
+version: "2.3"
+
+services:
+  f5-tts:
+    image: f5-tts:prod
+    container_name: f5-tts-service
+    restart: always
+    runtime: nvidia # 关键：使用 nvidia runtime 替代 deploy 资源配置
+    ports:
+      - "8008:8008"
+    environment:
+      - MAX_CONCURRENCY=3
+      - F5TTS_MODEL=F5TTS_v1_Base
+      - F5TTS_DEVICE=cuda
+      - LOG_LEVEL=INFO
+      # 指定默认参考音频路径（容器内路径）
+      - DEFAULT_REF_AUDIO=/data/ref_audio/aliyuntts-4sec.wav
+      # 缓存目录配置
+      - HF_HOME=/root/.cache/huggingface
+      - HF_HUB_OFFLINE=1 # 强制离线模式，禁止联网下载
+      - HF_DATASETS_OFFLINE=1
+      - TMPDIR=/tmp
+      # 显式指定可见设备（可选，默认全部）
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      # 挂载 Hugging Face 缓存，避免重启丢失模型
+      # 由于 Dockerfile 中定义了 VOLUME /root/.cache/huggingface/hub/，
+      # 必须显式挂载该子目录，否则会被空卷覆盖
+      - /home/zju/.cache/huggingface:/root/.cache/huggingface
+      - /home/zju/.cache/huggingface/hub:/root/.cache/huggingface/hub
+      # 挂载参考音频目录
+      - ./data/ref_audio:/data/ref_audio
+    # 移除 deploy 部分，改用 runtime: nvidia
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
