@@ -2,9 +2,11 @@ import time
 import requests
 import json
 import base64
+import os
 
 # 服务地址
 API_URL = "http://192.168.10.206:8008/tts"
+API_KEY = os.environ.get("F5_TTS_API_KEY", "b3766c7969fb8ac818c579978899bb6a6fbedae99724283c8787d2fb204a4466")
 
 # 约 1 分钟阅读量的中文文本（约 200-250 字）
 # 正常语速约为 200-250 字/分钟
@@ -35,7 +37,9 @@ def test_performance():
     try:
         # 使用 JSON 格式发送（Content-Type: application/json）
         # 注意：这里直接传 json 参数，requests 会自动设置 header
-        response = requests.post(API_URL, json=payload)
+        headers = {"X-API-Key": API_KEY}
+        print(f"使用 API Key: {API_KEY[:8]}...")
+        response = requests.post(API_URL, json=payload, headers=headers)
         
         request_latency = time.time() - start_time
         

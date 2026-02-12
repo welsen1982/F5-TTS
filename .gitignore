@@ -7,6 +7,7 @@ ckpts/
 wandb/
 results/
 vocos-mel-24khz/
+perf_test_1min.wav
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
