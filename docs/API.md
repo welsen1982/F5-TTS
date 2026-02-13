@@ -4,6 +4,7 @@
 
 ## 基础信息
 - **默认端口**：`8008`（Docker 部署时建议映射）
+- **生产环境**：`https://tts.duomi365.work:91`
 - **基础路径**：`/`
 - **认证**：API Key 认证 (Header `X-API-Key`)
 
@@ -141,7 +142,8 @@ X-API-Key: your-secret-key-xxx
 import requests
 import json
 
-url = "http://localhost:8000/tts"
+# 生产环境示例
+url = "https://tts.duomi365.work:91/tts"
 files = {
     'ref_audio': open('ref.wav', 'rb')
 }
@@ -213,6 +215,7 @@ result = response.json()
 - `F5_TTS_API_KEY`: API 认证密钥
 - `ALLOWED_ORIGINS`: 允许的 CORS 来源（默认 `*`）
 - `ENABLE_TEXT_NORMALIZATION`: 是否启用文本标准化 (默认 `true`)
+    - 支持自动处理：数字、日期、时间、货币、车牌号（如“京A88888”）、详细地址（如“北京市朝阳区...”）等。
 - `MAX_CONCURRENCY`: 最大并发请求数（默认 1）
 - `F5TTS_MODEL`: 模型名称（默认 `F5TTS_v1_Base`）
 - `F5TTS_DEVICE`: 指定设备 (`cuda`, `cpu`, `mps`)

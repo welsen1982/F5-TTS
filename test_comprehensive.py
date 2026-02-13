@@ -6,7 +6,7 @@ import json
 import base64
 
 # Configuration
-API_URL = "http://127.0.0.1:8008"
+API_URL = "https://tts.duomi365.work:91"
 API_KEY = os.environ.get("F5_TTS_API_KEY", "b3766c7969fb8ac818c579978899bb6a6fbedae99724283c8787d2fb204a4466")
 HEADERS = {"X-API-Key": API_KEY}
 
@@ -59,19 +59,21 @@ def main():
     run_test("Version Info", "/version", method="GET")
     
     # 3. Text Normalization Test (Mixed Content)
-    # Testing: Date, Number, English, Punctuation
+    # Testing: Date, Number, English, Punctuation, License Plate, Address
     text_cases = [
         "F5-TTS在2024年表现出色。",
         "今天的气温是-5°C。",
         "请拨打13800138000联系。",
-        "价格是$20.5，含50%折扣。"
+        "价格是$20.5，含50%折扣。",
+        "车牌号是京A88888。",
+        "地址是北京市朝阳区建国门外大街1号。"
     ]
     
     print(f"\n[Normalization Test] Running {len(text_cases)} cases...")
     
     # Use Batch API for efficiency
     batch_payload = [
-        {"gen_text": text} for text in text_cases
+        {"gen_text": text, "params": {"speed": 0.8}} for text in text_cases
     ]
     
     result = run_test("Batch TTS (Normalization)", "/tts/batch", payload=batch_payload)
@@ -91,7 +93,7 @@ def main():
         "F5-TTS 作为一个前沿的流匹配模型，不仅能够生成自然流畅的语音，"
         "还能精确捕捉参考音频的情感和韵律，实现零样本的声音克隆。"
     )
-    result = run_test("Long Text Perf", "/tts", payload={"gen_text": long_text})
+    result = run_test("Long Text Perf", "/tts", payload={"gen_text": long_text, "params": {"speed": 0.8}})
     if result and "audio_base64" in result:
         audio_data = base64.b64decode(result["audio_base64"])
         output_file = "test_long_text.wav"
@@ -99,7 +101,20 @@ def main():
             f.write(audio_data)
         print(f"   Saved Long Text Audio to {output_file}")
 
-    # 5. Security Test (Invalid Key)
+    # 5. Speed Control Test
+    print("\n[Speed Control Test] Testing speed 0.8...")
+    short_text = "测试语速控制功能。"
+    
+    # Speed 0.8
+    res_slow = run_test("Speed 0.8", "/tts", payload={
+        "gen_text": short_text,
+        "params": {"speed": 0.8}
+    })
+
+    if res_slow and "duration_sec" in res_slow:
+        print(f"   Audio Duration at 0.8x: {res_slow['duration_sec']:.2f}s")
+
+    # 6. Security Test (Invalid Key)
     print("\n[Security Test] Sending request with invalid key...")
     bad_headers = {"X-API-Key": "wrong-key"}
     try:
